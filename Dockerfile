@@ -55,13 +55,13 @@ WORKDIR $WORK/docker-spring-boot
 RUN mvn package
 
 # Объявлем порт сервера
-EXPOSE 8080
+EXPOSE 5000
 
-# стартуем с jar файла на 8080
+# стартуем с jar файла на 5000
 CMD service postgresql start && java -Xmx300M -Xmx300M -jar $WORK/docker-spring-boot/target/database-docker.jar
 
 # sudo docker build -f Dockerfile -t database-docker .
-# sudo docker run -p 8080:8080 database-docker
+# sudo docker run -p 5000:5000 database-docker
 # FROM openjdk:8
 # ADD target/database-docker.jar database-docker.jar
 # EXPOSE 8080
