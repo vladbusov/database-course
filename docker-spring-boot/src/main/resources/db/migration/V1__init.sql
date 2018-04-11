@@ -15,9 +15,9 @@ CREATE TABLE thread (
   created TIMESTAMP,
   message TEXT,
   title VARCHAR(255),
-  votes INTEGER
+  votes INTEGER,
   UNIQUE (slug)
-)
+);
 
 CREATE TABLE forum (
   id SERIAL PRIMARY KEY,

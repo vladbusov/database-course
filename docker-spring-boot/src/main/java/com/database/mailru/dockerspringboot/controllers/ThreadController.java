@@ -67,6 +67,6 @@ public class ThreadController {
         response.setStatus(200);
         return threadDao.getThreadsForForum(slug,limit,since,desc);
     }
-    
+
 
 }
