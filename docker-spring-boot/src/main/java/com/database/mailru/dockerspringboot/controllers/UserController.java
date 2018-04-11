@@ -25,7 +25,6 @@ public class UserController {
             response.setStatus(409);
             return list;
         }
-        System.out.println(user);
         user.setNickname(nickname);
         User result = userDao.createUser(user);
         if (result != null) {
