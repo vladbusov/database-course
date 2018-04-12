@@ -17,12 +17,12 @@ CREATE TABLE forum (
 CREATE TABLE thread (
   id SERIAL PRIMARY KEY,
   slug VARCHAR(255)  references forum (slug),
-  author VARCHAR(255) references (nickname),
   forum VARCHAR(255),
   created TIMESTAMP,
   message TEXT,
+  votes INTEGER,
   title VARCHAR(255),
-  votes INTEGER
+  author VARCHAR(255) references users (nickname)
 );
 
 

@@ -24,7 +24,7 @@ public class ForumDao {
     }
 
     public Forum createForum(Forum forum) {
-        final String sql = "INSERT INTO forum (slug,title,user,posts,threads) VALUES (?,?,?,0,0)";
+        final String sql = "INSERT INTO forum (slug,title,userRef,posts,threads) VALUES (?,?,?,0,0)";
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
         template.update(con -> {
             PreparedStatement pst = con.prepareStatement(

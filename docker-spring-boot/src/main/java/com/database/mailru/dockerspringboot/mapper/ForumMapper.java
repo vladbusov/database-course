@@ -8,7 +8,7 @@ public class ForumMapper {
         Long id = res.getLong("id");
         String title = res.getString("title");
         String slug = res.getString("slug");
-        String user = res.getString("user");
+        String user = res.getString("userRef");
         Integer posts = res.getInt("posts");
         Integer threads = res.getInt("threads");
 
