@@ -51,9 +51,11 @@ public class ThreadDao {
 
     public List<ThreadModel> equalThread(int id) throws JDBCException {
         final String sql = "SELECT * FROM thread WHERE id = ?";
-        return  template.query(sql, ps -> {
-            ps.setInt(1,id);
-        } , ThreadMapper.THREAD_MAPPER);
+        final List<ThreadModel> result = template.query(sql, ps -> { ps.setInt(1,id); } , ThreadMapper.THREAD_MAPPER);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return   result;
     }
 
     public List<ThreadModel> getThreadsForForum(String slug, Integer limit, String since, Boolean desc) {
@@ -62,11 +64,15 @@ public class ThreadDao {
             sql = sql  + " DESC";
         }
         sql = sql + " LIMIT ?";
-        return  template.query(sql, ps -> {
+        final List<ThreadModel> result =  template.query(sql, ps -> {
             ps.setString(1, slug);
             ps.setString(2, since);
             ps.setInt(3,limit);
         } , ThreadMapper.THREAD_MAPPER);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return   result;
     }
 
 }

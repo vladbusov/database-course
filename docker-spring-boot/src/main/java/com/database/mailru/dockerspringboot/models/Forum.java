@@ -11,7 +11,6 @@ import java.util.Objects;
 public class Forum {
 
     @Id
-    private Long id;
     private String slug;
     private String title;
     private String user;
@@ -19,7 +18,6 @@ public class Forum {
     private Integer threads;
 
     public Forum() {
-        this.id = null;
         this.slug = null;
         this.title = null;
         this.user = null;
@@ -27,8 +25,7 @@ public class Forum {
         this.threads = 0;
     }
 
-    public Forum(Long id, String slug, String title, String user, Integer posts, Integer threads) {
-        this.id = id;
+    public Forum(String slug, String title, String user, Integer posts, Integer threads) {
         this.slug = slug;
         this.title = title;
         this.user = user;
@@ -36,8 +33,7 @@ public class Forum {
         this.posts = posts;
     }
 
-    public Forum(Long id, String slug, String title, String user) {
-        this.id = id;
+    public Forum( String slug, String title, String user) {
         this.posts = 0;
         this.threads = 0;
         this.slug = slug;
@@ -69,14 +65,6 @@ public class Forum {
         this.user = user;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Integer getPosts() {
         return posts;
     }
@@ -98,8 +86,7 @@ public class Forum {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Forum forum = (Forum) o;
-        return Objects.equals(id, forum.id) &&
-                Objects.equals(slug, forum.slug) &&
+        return Objects.equals(slug, forum.slug) &&
                 Objects.equals(title, forum.title) &&
                 Objects.equals(user, forum.user) &&
                 Objects.equals(posts, forum.posts) &&
@@ -109,6 +96,6 @@ public class Forum {
     @Override
     public int hashCode() {
 
-        return Objects.hash(id, slug, title, user, posts, threads);
+        return Objects.hash(slug, title, user, posts, threads);
     }
 }

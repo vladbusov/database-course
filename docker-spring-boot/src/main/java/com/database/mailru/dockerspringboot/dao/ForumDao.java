@@ -25,17 +25,16 @@ public class ForumDao {
 
     public Forum createForum(Forum forum) {
         final String sql = "INSERT INTO forum (slug,title,userRef,posts,threads) VALUES (?,?,?,0,0)";
-        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
         template.update(con -> {
             PreparedStatement pst = con.prepareStatement(
-                    sql + " returning id",
+                    sql,
                     PreparedStatement.RETURN_GENERATED_KEYS);
             pst.setString(1, forum.getSlug() );
             pst.setString(2, forum.getTitle() );
             pst.setString(3, forum.getUser() );
             return pst;
-        }, keyHolder);
-        return new Forum( keyHolder.getKey().longValue(),forum.getSlug(), forum.getTitle(), forum.getUser());
+        });
+        return new Forum( forum.getSlug(), forum.getTitle(), forum.getUser());
     }
 
     public Forum getForumForSlug(String slug) {
@@ -57,9 +56,13 @@ public class ForumDao {
 
     public List<Forum> equalForumSlug(String slug) throws JDBCException {
         final String sql = "SELECT * FROM forum WHERE slug = ?";
-        return  template.query(sql, ps -> {
+        final List<Forum> result = template.query(sql, ps -> {
             ps.setString(1,slug);
         } , ForumMapper.FORUM_MAPPER);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result;
     }
 
 

@@ -9,14 +9,12 @@ import java.util.Objects;
 @Table(name = "users")
 public class User {
     @Id
-    private Long id;
     private String nickname;
     private String fullname;
     private String email;
     private String about;
 
     public User() {
-        this.id = null;
         this.nickname = null;
         this.fullname = null;
         this.email = null;
@@ -24,8 +22,7 @@ public class User {
     }
 
 
-    public User(Long id, String nickname, String fullname, String email, String about) {
-        this.id = id;
+    public User( String nickname, String fullname, String email, String about) {
         this.nickname = nickname;
         this.fullname = fullname;
         this.email = email;
@@ -40,13 +37,6 @@ public class User {
         this.fullname = fullname;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getNickname() {
         return nickname;
@@ -77,8 +67,7 @@ public class User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return Objects.equals(id, user.id) &&
-                Objects.equals(nickname, user.nickname) &&
+        return Objects.equals(nickname, user.nickname) &&
                 Objects.equals(fullname, user.fullname) &&
                 Objects.equals(email, user.email) &&
                 Objects.equals(about, user.about);
@@ -87,6 +76,6 @@ public class User {
     @Override
     public int hashCode() {
 
-        return Objects.hash(id, nickname, fullname, email, about);
+        return Objects.hash(nickname, fullname, email, about);
     }
 }

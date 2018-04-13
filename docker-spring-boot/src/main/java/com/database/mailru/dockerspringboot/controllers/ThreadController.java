@@ -36,14 +36,19 @@ public class ThreadController {
             return new Message("Can't find forum user" + threadModel.getAuthor() );
         }
         threadModel.setSlug(slug);
-        List<ThreadModel> threads = threadDao.equalThread(threadModel.getId().intValue());
-        if ( !threads.isEmpty() ) {
-            response.setStatus(409);
-            return threads.get(0);
+        try {
+            List<ThreadModel> threads = threadDao.equalThread(threadModel.getId().intValue());
+        } catch (NullPointerException e) {
+            response.setStatus(201);
+            forumDao.incrementThreads(threadModel.getSlug());
+            return threadDao.createThread(threadModel);
         }
-        response.setStatus(201);
-        forumDao.incrementThreads(threadModel.getSlug());
-        return threadDao.createThread(threadModel);
+
+        List<ThreadModel> thread = threadDao.equalThread(threadModel.getId().intValue());
+        thread = threadDao.equalThread(threadModel.getId().intValue());
+        response.setStatus(409);
+        return thread.get(0);
+
     }
 
     @GetMapping(value = "/forum/{slug}/details", produces = "application/json")

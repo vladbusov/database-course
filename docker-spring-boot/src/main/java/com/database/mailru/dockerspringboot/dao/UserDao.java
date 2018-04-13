@@ -5,10 +5,6 @@ import com.database.mailru.dockerspringboot.mapper.UserMapper;
 import com.database.mailru.dockerspringboot.models.User;
 import org.hibernate.JDBCException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,34 +22,41 @@ public class UserDao {
 
     public List<User> equalUsers(User user) throws  JDBCException {
         final String sql = "SELECT * FROM Users WHERE email = ? OR nickname = ?";
-        return  template.query(sql, ps -> {
+        final List<User> result =  template.query(sql, ps -> {
             ps.setString(1,user.getEmail());
             ps.setString(2,user.getNickname());
         } , UserMapper.USER_MAPPER);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result;
     }
 
     public List<User> equalUsersEmail(User user) throws  JDBCException {
         final String sql = "SELECT * FROM Users WHERE email = ?";
-        return  template.query(sql, ps -> {
+        final List<User> result =  template.query(sql, ps -> {
             ps.setString(1,user.getEmail());
         } , UserMapper.USER_MAPPER);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result;
     }
 
 
     public User createUser(User user) throws JDBCException {
         final String sql = "INSERT INTO Users (nickname, email, fullname, about) VALUES (?,?,?,?)";
-        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
         template.update(con -> {
             PreparedStatement pst = con.prepareStatement(
-                    sql + " returning id",
+                    sql ,
                     PreparedStatement.RETURN_GENERATED_KEYS);
             pst.setString(1, user.getNickname());
             pst.setString(2, user.getEmail());
             pst.setString(3, user.getFullname());
             pst.setObject(4, user.getAbout());
             return pst;
-        }, keyHolder);
-        return new User(keyHolder.getKey().longValue(), user.getNickname(), user.getFullname(), user.getEmail(), user.getAbout() );
+        });
+        return new User( user.getNickname(), user.getFullname(), user.getEmail(), user.getAbout() );
     }
 
     public User getByNickname(String nickname) {
