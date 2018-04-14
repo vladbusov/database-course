@@ -1,6 +1,7 @@
 package com.database.mailru.dockerspringboot.dao;
 
 
+import com.database.mailru.dockerspringboot.mapper.ThreadMapper;
 import com.database.mailru.dockerspringboot.mapper.UserMapper;
 import com.database.mailru.dockerspringboot.models.User;
 import org.hibernate.JDBCException;
@@ -9,7 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 @Service
 @Transactional
 public class UserDao {
@@ -75,6 +79,40 @@ public class UserDao {
         return result.get(0);
     }
 
+    public List<User> getUsersByForum(String slug, Integer limit, String since, Boolean desc) {
+        final StringBuilder sqlCreate = new StringBuilder();
+        final List<Object> params = new ArrayList<>();
+
+        sqlCreate.append("Select * from users left join posts on users.id = posts.author left" +
+                "join thread on users.id = thread.author where posts.forum = ? or thread.slug = ?");
+        params.add(slug);
+        params.add(slug);
+
+        if (since != null) {
+            if (Objects.equals(desc, Boolean.TRUE)) {
+                sqlCreate.append("and posts.created <= ? and thread.created <= ? ");
+            } else {
+                sqlCreate.append("and created >= ? and thread.created >= ?");
+            }
+            params.add(since);
+            params.add(since);
+        }
+
+        sqlCreate.append("ORDER BY posts.created ");
+
+        sqlCreate.append(Objects.equals(desc, Boolean.TRUE) ? " DESC " : "");
+
+        sqlCreate.append(", thread.created ");
+
+        sqlCreate.append(Objects.equals(desc, Boolean.TRUE) ? " DESC " : "");
+
+        if (limit != null) {
+            sqlCreate.append("LIMIT ?");
+            params.add(limit);
+        }
+
+        return template.query(sqlCreate.toString(), UserMapper.USER_MAPPER , params.toArray());
+    }
 
 
     public void delete(int id) {

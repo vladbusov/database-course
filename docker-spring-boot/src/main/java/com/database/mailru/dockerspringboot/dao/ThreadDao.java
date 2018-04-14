@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Transactional
 @Service
@@ -63,20 +65,31 @@ public class ThreadDao {
     }
 
     public List<ThreadModel> getThreadsForForum(String slug, Integer limit, String since, Boolean desc) {
-        String sql = "SELECT * FROM thread WHERE slug = ? AND created > ? ORDER BY created";
-        if (desc) {
-            sql = sql  + " DESC";
+        final StringBuilder sqlCreate = new StringBuilder();
+        final List<Object> params = new ArrayList<>();
+
+        sqlCreate.append("SELECT * FROM thread WHERE slug = ?");
+        params.add(slug);
+
+        if (since != null) {
+            if (Objects.equals(desc, Boolean.TRUE)) {
+                sqlCreate.append("and created <= ? ");
+            } else {
+                sqlCreate.append("and created >= ? ");
+            }
+            params.add(since);
         }
-        sql = sql + " LIMIT ?";
-        final List<ThreadModel> result =  template.query(sql, ps -> {
-            ps.setString(1, slug);
-            ps.setString(2, since);
-            ps.setInt(3,limit);
-        } , ThreadMapper.THREAD_MAPPER);
-        if (result.isEmpty()) {
-            return null;
+
+        sqlCreate.append("ORDER BY created ");
+
+        sqlCreate.append(Objects.equals(desc, Boolean.TRUE) ? " DESC " : "");
+
+        if (limit != null) {
+            sqlCreate.append("LIMIT ?");
+            params.add(limit);
         }
-        return   result;
+
+        return template.query(sqlCreate.toString(), ThreadMapper.THREAD_MAPPER, params.toArray());
     }
 
     public ThreadModel getThreadById(Long id) throws  JDBCException {
