@@ -19,6 +19,11 @@ public class PostDao {
     private final ForumDao forumDao;
     private final ThreadDao threadDao;
     private final UserDao userDao;
+    private static Integer numOfPosts;
+
+    static {
+        numOfPosts = 0;
+    }
 
     public PostDao(JdbcTemplate template, ForumDao forumDao, ThreadDao threadDao, UserDao userDao) {
         this.template = template;
@@ -45,6 +50,7 @@ public class PostDao {
             pst.setTimestamp(7,post.getCreated());
             return pst;
         }, keyHolder);
+        this.numOfPosts++;
         return new Post(keyHolder.getKey().longValue(), post.getAuthor(), post.getForum(), post.getMessage(), post.getParent(), post.getThread(), post.getEdited(), post.getCreated());
     }
 
@@ -57,5 +63,15 @@ public class PostDao {
             return null;
         }
         return result.get(0);
+    }
+
+    public static Integer getNumOfPosts() {
+        return numOfPosts;
+    }
+
+    public void clean() {
+        final String sql = "DELETE FROM posts";
+        this.numOfPosts = 0;
+        template.execute(sql);
     }
 }

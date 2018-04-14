@@ -27,10 +27,14 @@ public class ForumController {
             response.setStatus(404);
             return new Message("Can't find user with nickname " + forum.getUser());
         }
-        List<Forum> forums = forumDao.equalForumSlug(forum.getSlug());
-        if (!forums.isEmpty()) {
-            response.setStatus(409);
-            return  forums.get(0);
+        try {
+            List<Forum> forums = forumDao.equalForumSlug(forum.getSlug());
+            if (!forums.isEmpty()) {
+                response.setStatus(409);
+                return forums.get(0);
+            }
+        } catch (NullPointerException e) {
+
         }
         response.setStatus(201);
         return forumDao.createForum(forum);

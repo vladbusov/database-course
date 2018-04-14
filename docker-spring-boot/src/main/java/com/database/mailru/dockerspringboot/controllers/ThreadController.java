@@ -54,9 +54,13 @@ public class ThreadController {
     @GetMapping(value = "/api/forum/{slug}/details", produces = "application/json")
     public Object getForumDetails(@PathVariable("slug") String slug, HttpServletResponse response) {
         List<Forum> forums = forumDao.equalForumSlug(slug) ;
-        if ( !forums.isEmpty() ) {
-            response.setStatus(200);
-            return forums.get(0);
+        try {
+            if (!forums.isEmpty()) {
+                response.setStatus(200);
+                return forums.get(0);
+            }
+        } catch (NullPointerException e) {
+
         }
         response.setStatus(404);
         return new Message("Can't find forum slug with " + slug);
@@ -65,9 +69,13 @@ public class ThreadController {
     @GetMapping(value = "/api/forum/{slug}/threads", produces = "application/json")
     public Object getForumThreads(@PathVariable("slug") String slug, @RequestParam("limit") Integer limit, @RequestParam("since") String since, @RequestParam("desc") Boolean desc , HttpServletResponse response) {
         List<Forum> forums = forumDao.equalForumSlug(slug) ;
-        if ( forums.isEmpty() ) {
-            response.setStatus(404);
-            return new Message("Can't find forum slug with " + slug);
+        try {
+            if (forums.isEmpty()) {
+                response.setStatus(404);
+                return new Message("Can't find forum slug with " + slug);
+            }
+        }catch (NullPointerException e){
+
         }
         response.setStatus(200);
         return threadDao.getThreadsForForum(slug,limit,since,desc);

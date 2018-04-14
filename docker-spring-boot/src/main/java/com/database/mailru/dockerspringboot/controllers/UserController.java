@@ -21,10 +21,15 @@ public class UserController {
     @PostMapping(value = "/api/user/{nickname}/create", produces = "application/json")
     public Object createUser(@PathVariable("nickname") String nickname, @RequestBody User user ,HttpServletResponse response) throws IOException {
         List<User> list = userDao.equalUsers(user);
-        if (!list.isEmpty()) {
-            response.setStatus(409);
-            return list;
+        try {
+            if (!list.isEmpty()) {
+                response.setStatus(409);
+                return list;
+            }
+        } catch (NullPointerException e) {
+
         }
+
         user.setNickname(nickname);
         User result = userDao.createUser(user);
         if (result != null) {

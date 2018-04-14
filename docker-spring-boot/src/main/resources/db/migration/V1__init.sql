@@ -33,7 +33,7 @@ CREATE TABLE posts (
   created TIMESTAMP,
   isEdited BOOLEAN,
   thread INTEGER  REFERENCES thread (id),
-  forum INTEGER REFERENCES forum (slug)
+  forum VARCHAR(255) REFERENCES forum (slug)
 );
 
 CREATE TABLE votes (

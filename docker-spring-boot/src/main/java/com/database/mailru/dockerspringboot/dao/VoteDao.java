@@ -36,4 +36,9 @@ public class VoteDao {
         return new Vote(keyHolder.getKey().longValue(), vote.getNickname(), vote.getVoice(), vote.getThreadId());
     }
 
+    public void clean() {
+        final String sql = "DELETE FROM votes";
+        template.execute(sql);
+    }
+
 }

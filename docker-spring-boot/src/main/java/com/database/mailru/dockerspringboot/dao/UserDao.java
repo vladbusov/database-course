@@ -15,9 +15,15 @@ import java.util.List;
 public class UserDao {
 
     private final JdbcTemplate template;
+    private static Integer numOfusers;
+
+    static {
+        numOfusers = 0;
+    }
 
     public UserDao(JdbcTemplate template) {
         this.template = template;
+        this.numOfusers = 0;
     }
 
     public List<User> equalUsers(User user) throws  JDBCException {
@@ -56,6 +62,7 @@ public class UserDao {
             pst.setObject(4, user.getAbout());
             return pst;
         });
+        this.numOfusers++;
         return new User( user.getNickname(), user.getFullname(), user.getEmail(), user.getAbout() );
     }
 
@@ -80,4 +87,13 @@ public class UserDao {
         return template.update(sql, user.getAbout(), user.getEmail(), user.getFullname(), user.getNickname());
     }
 
+    public static Integer getNumOfusers() {
+        return numOfusers;
+    }
+
+    public void clean() {
+        final String sql = "DELETE FROM users";
+        this.numOfusers = 0;
+        template.execute(sql);
+    }
 }

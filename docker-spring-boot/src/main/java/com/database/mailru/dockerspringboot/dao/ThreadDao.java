@@ -17,10 +17,16 @@ public class ThreadDao {
 
     private final JdbcTemplate template;
     private final ForumDao forumDao;
+    private static Integer numOfThreads;
+
+    static {
+        numOfThreads = 0;
+    }
 
     public ThreadDao(JdbcTemplate template, ForumDao forumDao) {
         this.template = template;
         this.forumDao = forumDao;
+        this.numOfThreads = 0;
     }
 
     public ThreadModel createThread(ThreadModel thread) throws JDBCException {
@@ -43,6 +49,7 @@ public class ThreadDao {
             pst.setInt(7,votes);
             return pst;
         }, keyHolder);
+        this.numOfThreads++;
         return new ThreadModel(keyHolder.getKey().longValue(),thread.getSlug(),thread.getAuthor(), forum, thread.getCreated(), thread.getMessage(), thread.getTitle(),votes);
     }
 
@@ -97,4 +104,13 @@ public class ThreadDao {
         updateThread(thread);
     }
 
+    public static Integer getNumOfThreads() {
+        return numOfThreads;
+    }
+
+    public void clean() {
+        final String sql = "DELETE FROM thread";
+        this.numOfThreads = 0;
+        template.execute(sql);
+    }
 }

@@ -18,9 +18,14 @@ import java.util.List;
 public class ForumDao {
 
     private final JdbcTemplate template;
+    private static Integer numOfForums;
 
     public ForumDao(JdbcTemplate template) {
         this.template = template;
+    }
+
+    static {
+        numOfForums = 0;
     }
 
     public Forum createForum(Forum forum) {
@@ -34,6 +39,7 @@ public class ForumDao {
             pst.setString(3, forum.getUser() );
             return pst;
         });
+        this.numOfForums++;
         return new Forum( forum.getSlug(), forum.getTitle(), forum.getUser());
     }
 
@@ -65,5 +71,13 @@ public class ForumDao {
         return result;
     }
 
+    public static Integer getNumOfForums() {
+        return numOfForums;
+    }
 
+    public void clean() {
+        final String sql = "DELETE FROM forum";
+        template.execute(sql);
+        this.numOfForums = 0;
+    }
 }
