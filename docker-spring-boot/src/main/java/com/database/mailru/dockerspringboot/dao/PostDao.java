@@ -3,6 +3,7 @@ package com.database.mailru.dockerspringboot.dao;
 import com.database.mailru.dockerspringboot.mapper.PostMapper;
 import com.database.mailru.dockerspringboot.mapper.ThreadMapper;
 import com.database.mailru.dockerspringboot.models.Post;
+import com.database.mailru.dockerspringboot.models.User;
 import org.hibernate.JDBCException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -67,6 +68,11 @@ public class PostDao {
 
     public static Integer getNumOfPosts() {
         return numOfPosts;
+    }
+
+    public void updatePost(Post post) {
+        final String sql = "UPDATE Posts SET message=? WHERE id =?";
+        template.update(sql, post.getMessage(), post.getId());
     }
 
     public void clean() {
