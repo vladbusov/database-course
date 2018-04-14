@@ -21,7 +21,7 @@ public class ForumController {
         this.forumDao = forumDao;
     }
 
-    @PostMapping(value = "/forum/create", produces = "application/json")
+    @PostMapping(value = "/api/forum/create", produces = "application/json")
     public Object getUserProfile(@RequestBody Forum forum , HttpServletResponse response) {
         if (userDao.getByNickname(forum.getUser()) == null) {
             response.setStatus(404);

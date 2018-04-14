@@ -25,7 +25,7 @@ public class ThreadController {
         this.threadDao = threadDao;
     }
 
-    @PostMapping(value = "/forum/{slug}/create", produces = "application/json")
+    @PostMapping(value = "/api/forum/{slug}/create", produces = "application/json")
     public Object createUser(@PathVariable("slug") String slug, @RequestBody ThreadModel threadModel, HttpServletResponse response) throws IOException {
         if (forumDao.getForumForSlug(slug) == null) {
             response.setStatus(404);
@@ -51,7 +51,7 @@ public class ThreadController {
 
     }
 
-    @GetMapping(value = "/forum/{slug}/details", produces = "application/json")
+    @GetMapping(value = "/api/forum/{slug}/details", produces = "application/json")
     public Object getForumDetails(@PathVariable("slug") String slug, HttpServletResponse response) {
         List<Forum> forums = forumDao.equalForumSlug(slug) ;
         if ( !forums.isEmpty() ) {
@@ -62,7 +62,7 @@ public class ThreadController {
         return new Message("Can't find forum slug with " + slug);
     }
 
-    @GetMapping(value = "/forum/{slug}/threads", produces = "application/json")
+    @GetMapping(value = "/api/forum/{slug}/threads", produces = "application/json")
     public Object getForumThreads(@PathVariable("slug") String slug, @RequestParam("limit") Integer limit, @RequestParam("since") String since, @RequestParam("desc") Boolean desc , HttpServletResponse response) {
         List<Forum> forums = forumDao.equalForumSlug(slug) ;
         if ( forums.isEmpty() ) {
@@ -72,6 +72,7 @@ public class ThreadController {
         response.setStatus(200);
         return threadDao.getThreadsForForum(slug,limit,since,desc);
     }
+
 
 
 }

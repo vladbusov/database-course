@@ -18,7 +18,7 @@ public class UserController {
         this.userDao = userDao;
     }
 
-    @PostMapping(value = "/user/{nickname}/create", produces = "application/json")
+    @PostMapping(value = "/api/user/{nickname}/create", produces = "application/json")
     public Object createUser(@PathVariable("nickname") String nickname, @RequestBody User user ,HttpServletResponse response) throws IOException {
         List<User> list = userDao.equalUsers(user);
         if (!list.isEmpty()) {
@@ -34,7 +34,7 @@ public class UserController {
         return null;
     }
 
-    @GetMapping(value = "/user/{nickname}/profile", produces = "application/json")
+    @GetMapping(value = "/api/user/{nickname}/profile", produces = "application/json")
     public Object getUserProfile(@PathVariable(value = "nickname") String nickname, HttpServletResponse response) {
         User result = userDao.getByNickname(nickname);
         if (result == null) {
@@ -45,7 +45,7 @@ public class UserController {
         return result;
     }
 
-    @PostMapping(value = "/user/{nickname}/profile", produces = "application/json")
+    @PostMapping(value = "/api/user/{nickname}/profile", produces = "application/json")
     public Object editUserProfile(@PathVariable("nickname") String nickname, @RequestBody User user ,HttpServletResponse response) throws IOException {
         if (userDao.getByNickname(nickname) == null) {
             response.setStatus(404);

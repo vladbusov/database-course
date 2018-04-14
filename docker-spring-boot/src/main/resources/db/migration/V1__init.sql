@@ -25,4 +25,15 @@ CREATE TABLE thread (
   author VARCHAR(255) references users (nickname)
 );
 
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  author VARCHAR(255),
+  message TEXT,
+  parent INTEGER,
+  created TIMESTAMP,
+  isEdited BOOLEAN,
+  thread INTEGER  REFERENCES thread (id),
+  forum INTEGER REFERENCES forum (slug)
+);
+
 
