@@ -36,4 +36,9 @@ CREATE TABLE posts (
   forum INTEGER REFERENCES forum (slug)
 );
 
-
+CREATE TABLE votes (
+  id Serial PRIMARY KEY ,
+  nickname VARCHAR(255) REFERENCES users (nickname),
+  voice INTEGER,
+  threadId INTEGER REFERENCES thread(id)
+);

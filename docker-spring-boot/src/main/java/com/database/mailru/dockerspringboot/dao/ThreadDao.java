@@ -1,10 +1,7 @@
 package com.database.mailru.dockerspringboot.dao;
 
-import com.database.mailru.dockerspringboot.mapper.ForumMapper;
 import com.database.mailru.dockerspringboot.mapper.ThreadMapper;
-import com.database.mailru.dockerspringboot.models.Forum;
 import com.database.mailru.dockerspringboot.models.ThreadModel;
-import com.database.mailru.dockerspringboot.models.User;
 import org.hibernate.JDBCException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -73,6 +70,31 @@ public class ThreadDao {
             return null;
         }
         return   result;
+    }
+
+    public ThreadModel getThreadById(Long id) throws  JDBCException {
+        final String sql = "SELECT * FROM Thread WHERE id = ?";
+        final List<ThreadModel> result =  template.query(sql, ps -> {
+            ps.setLong(1,id);
+        } , ThreadMapper.THREAD_MAPPER);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.get(0);
+    }
+
+    public int updateThread(ThreadModel thread) {
+        final String sql = "UPDATE Thread SET message=?, title=?, votes=? WHERE id=?";
+        return template.update(sql, thread.getMessage(), thread.getTitle(), thread.getVotes(), thread.getId());
+    }
+
+    public void incrementVotes(Long id) {
+        final ThreadModel thread =  getThreadById(id);
+        if (thread == null) {
+            return;
+        }
+        thread.setVotes(thread.getVotes() + 1);
+        updateThread(thread);
     }
 
 }
