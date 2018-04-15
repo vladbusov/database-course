@@ -16,8 +16,9 @@ public class Post {
     private Long thread;
     private Boolean isEdited;
     private String created;
+    private String path;
 
-    public Post(Long id, String author, String forum, String message, Long parent, Long thread, Boolean isEdited, String created) {
+    public Post(Long id, String author, String forum, String message, Long parent, Long thread, Boolean isEdited, String created, String path) {
         this.id = id;
         this.author = author;
         this.forum = forum;
@@ -26,6 +27,7 @@ public class Post {
         this.thread = thread;
         this.isEdited = isEdited;
         this.created = created;
+        this.path = path;
     }
 
 
@@ -38,6 +40,7 @@ public class Post {
         this.thread = null;
         this.isEdited = false;
         this.created = null;
+        this.path = null;
     }
 
     public Long getId() {
@@ -104,6 +107,14 @@ public class Post {
         this.created = created;
     }
 
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -116,12 +127,13 @@ public class Post {
                 Objects.equals(parent, post.parent) &&
                 Objects.equals(thread, post.thread) &&
                 Objects.equals(isEdited, post.isEdited) &&
-                Objects.equals(created, post.created);
+                Objects.equals(created, post.created) &&
+                Objects.equals(path, post.path);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(id, author, forum, message, parent, thread, isEdited, created);
+        return Objects.hash(id, author, forum, message, parent, thread, isEdited, created, path);
     }
 }

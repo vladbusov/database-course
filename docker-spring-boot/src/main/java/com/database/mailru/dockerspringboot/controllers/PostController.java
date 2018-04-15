@@ -8,6 +8,7 @@ import com.database.mailru.dockerspringboot.models.Vote;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -34,7 +35,7 @@ public class PostController {
     }
 
     @PostMapping(value = "/api/thread/{slug_or_id}/create", produces = "application/json")
-    public Object createPost(@PathVariable("slug_or_id") String id, @RequestBody Post[] posts, HttpServletResponse response) {
+    public Object createPost(@PathVariable("slug_or_id") String id, @RequestBody Post[] posts, HttpServletResponse response) throws SQLException {
         final String currentTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
         for (Post post : posts) {
             post.setEdited(false);

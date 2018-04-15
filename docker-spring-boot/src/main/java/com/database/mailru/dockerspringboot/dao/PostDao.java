@@ -5,6 +5,7 @@ import com.database.mailru.dockerspringboot.mapper.ThreadMapper;
 import com.database.mailru.dockerspringboot.models.Post;
 import com.database.mailru.dockerspringboot.models.ThreadModel;
 import com.database.mailru.dockerspringboot.models.User;
+import org.flywaydb.core.internal.database.postgresql.PostgreSQLConnection;
 import org.hibernate.JDBCException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
@@ -13,12 +14,10 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.sql.PreparedStatement;
+import java.sql.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Transactional
 @Service
@@ -40,14 +39,15 @@ public class PostDao {
         this.userDao = userDao;
     }
 
+    public Post createPost(Post post, String time) throws JDBCException, SQLException {
+        final String sql = "INSERT INTO posts (author,forum,message,parent,thread,isEdited,created,path) VALUES (?,?,?,?,?,?,?::TIMESTAMPTZ,?)";
 
-
-    public Post createPost(Post post, String time) throws JDBCException {
-        final String sql = "INSERT INTO posts (author,forum,message,parent,thread,isEdited,created) VALUES (?,?,?,?,?,?,?::TIMESTAMPTZ )";
-
+        Long parentId = post.getParent();
+        Post parent = getPostById(parentId);
 
 
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
+        String finalNewPath = "";
         template.update(con -> {
             PreparedStatement pst = con.prepareStatement(
                     sql + " returning id",
@@ -59,9 +59,21 @@ public class PostDao {
             pst.setLong(5, post.getThread());
             pst.setBoolean(6, post.getEdited());
             pst.setString(7, time);
+            pst.setString(8, finalNewPath);
             return pst;
         }, keyHolder);
         this.numOfPosts++;
+
+        String newPath = "";
+        if (parent != null) {
+            newPath = parent.getPath() + "." + String.valueOf(keyHolder.getKey().longValue());
+        } else {
+            newPath = "0." + String.valueOf(keyHolder.getKey().longValue());
+        }
+
+        post.setId(keyHolder.getKey().longValue());
+        post.setPath(newPath);
+        updatePost(post);
         return (getPostById(keyHolder.getKey().longValue()));
     }
 
@@ -83,8 +95,8 @@ public class PostDao {
     }
 
     public void updatePost(Post post) {
-        final String sql = "UPDATE Posts SET message=? WHERE id =?";
-        template.update(sql, post.getMessage(), post.getId());
+        final String sql = "UPDATE Posts SET message=?, path =? WHERE id =?";
+        template.update(sql, post.getMessage(),post.getPath(), post.getId());
     }
 
     public void clean() {
@@ -96,21 +108,21 @@ public class PostDao {
     public List<Post> getPostsForThread(Long id, Integer limit, String since, String sort, Boolean desc) {
 
         final ThreadModel thread = threadDao.getThreadById(id);
-        if (sort == null)
+        if (sort == null) {
             sort = "flat";
+        }
         switch (sort) {
             case "tree":
-                return getSqlSortTree(thread.getId(), limit, since, desc);
+                return sortByTree(thread.getId(), limit, since, desc);
             case "parent_tree":
-                return getSqlSortParentTree(thread.getId(), limit, since, desc);
-            default:
-                return getSqlSortFlat(thread.getId(), limit, since, desc);
+                return sortByParentTree(thread.getId(), limit, since, desc);
+            case "flat":
+                return sortByFlat(thread.getId(), limit, since, desc);
         }
-
-
+        return null;
     }
 
-    public List<Post> getSqlSortFlat(Long id, Integer limit, String since, Boolean desc) {
+    public List<Post> sortByFlat(Long id, Integer limit, String since, Boolean desc) {
         // flat - по дате, комментарии выводятся простым списком в порядке создания;
         final StringBuilder sqlQuery = new StringBuilder();
         final ArrayList<Object> params = new ArrayList<>();
@@ -121,9 +133,9 @@ public class PostDao {
             sqlQuery.append(" AND id " );
 
             if (desc != null && desc.equals(Boolean.TRUE)) {
-                sqlQuery.append(" <= ? ");
+                sqlQuery.append(" < (select id from posts where id = ?::integer) ");
             } else {
-                sqlQuery.append(" >= ? ");
+                sqlQuery.append(" > (select id from posts where id = ?::integer) ");
             }
 
             params.add(since);
@@ -142,16 +154,15 @@ public class PostDao {
         return template.query(sqlQuery.toString(), PostMapper.POST_MAPPER, params.toArray());
     }
 
-    public List<Post> getSqlSortTree(Long thread_id, Integer limit, String since, Boolean desc) {
+    public List<Post> sortByTree(Long thread_id, Integer limit, String since, Boolean desc) {
         // tree - древовидный, комментарии выводятся отсортированные в дереве по N штук;
         final StringBuilder sqlQuery = new StringBuilder();
         final ArrayList<Object> params = new ArrayList<>();
-        sqlQuery.append("SELECT u.nickname as author, p.created, f.slug as forum, p.id, p.isEdited as isEdited, p.message, p.parent, p.thread as thread " +
-                " FROM Posts p JOIN users u ON p.author = u.id JOIN forum f on p.forum = f.slug WHERE thread.Id = ? ");
+        sqlQuery.append("select * from posts where thread = ?");
         params.add(thread_id);
 
         if (since != null) {
-            sqlQuery.append(" AND p.path " );
+            sqlQuery.append(" AND path " );
 
             if (desc != null && desc.equals(Boolean.TRUE)) {
                 sqlQuery.append(" < ");
@@ -159,11 +170,11 @@ public class PostDao {
                 sqlQuery.append(" > ");
             }
 
-            sqlQuery.append(" (SELECT path from Posts Where id = ?) ");
+            sqlQuery.append(" (SELECT path from Posts Where id = ?::integer) ");
             params.add(since);
         }
 
-        sqlQuery.append(" ORDER BY p.path ");
+        sqlQuery.append(" ORDER BY path ");
         if (desc != null && desc.equals(Boolean.TRUE)) {
             sqlQuery.append(" DESC ");
         }
@@ -176,14 +187,13 @@ public class PostDao {
         return template.query(sqlQuery.toString(), PostMapper.POST_MAPPER, params.toArray());
     }
 
-    public List<Post> getSqlSortParentTree(Long thread_id, Integer limit, String since, Boolean desc) {
+    public List<Post> sortByParentTree(Long thread_id, Integer limit, String since, Boolean desc) {
         // parent_tree - древовидные с пагинацией по родительским (parent_tree), на странице N
         // родительских комментов и все комментарии прикрепленные к ним, в древвидном отображение.
         final StringBuilder sqlQuery = new StringBuilder();
         final ArrayList<Object> params = new ArrayList<>();
-        sqlQuery.append("SELECT u.nickname as author, p.created, f.slug as forum, p.id, p.isEdited as isEdited, p.message, p.parent, p.thread as thread " +
-                " FROM Posts p JOIN users u ON p.author = u.id JOIN forums f on p.forum = f.slug " +
-                " WHERE p.parent IN ( SELECT id FROM posts WHERE thread = ? AND parent = 0 ");
+        sqlQuery.append("select * from posts where (string_to_array(path,'.'))[2]::integer in  " +
+                "(select id from posts where thread = ? and parent = 0 ");
         params.add(thread_id);
 
         if (since != null) {
@@ -195,13 +205,14 @@ public class PostDao {
                 sqlQuery.append(" > ");
             }
 
-            sqlQuery.append(" (SELECT parent from Posts Where id = ?) ");
+            sqlQuery.append(" (SELECT (string_to_array(path,'.'))[2]::integer from Posts Where id = ?::integer)::integer ");
             params.add(since);
         }
 
+
         sqlQuery.append(" ORDER BY id ");
         if (desc != null && desc.equals(Boolean.TRUE)) {
-            sqlQuery.append(" DESC ");
+            sqlQuery.append("  DESC ");
         }
 
         if (limit != null) {
@@ -209,11 +220,15 @@ public class PostDao {
             params.add(limit);
         }
 
-        sqlQuery.append(" ) ORDER BY ");
+        // string_to_array(path,'.');
+        sqlQuery.append(") ORDER BY  ");
         if (desc != null && desc.equals(Boolean.TRUE)) {
-            sqlQuery.append(" p.parent DESC, ");
+            sqlQuery.append(" (string_to_array(path,'.'))[2] DESC, path ASC ");
+        } else {
+            sqlQuery.append(" path ");
         }
-        sqlQuery.append(" p.path ");
+
+
 
         return template.query(sqlQuery.toString(), PostMapper.POST_MAPPER, params.toArray());
     }

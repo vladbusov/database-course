@@ -16,11 +16,12 @@ public class PostMapper {
         String message = res.getString("message");
         Long parent = res.getLong("parent");
         Long thread = res.getLong("thread");
+        String path = res.getString("path");
         Boolean isEdited = res.getBoolean("isEdited");
         final Timestamp timestamp = res.getTimestamp("created");
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        return new Post(id, author, forum, message, parent, thread, isEdited, dateFormat.format(timestamp.getTime()));
+        return new Post(id, author, forum, message, parent, thread, isEdited, dateFormat.format(timestamp.getTime()), path);
     };
 }
