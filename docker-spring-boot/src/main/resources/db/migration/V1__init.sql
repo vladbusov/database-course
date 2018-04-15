@@ -30,7 +30,7 @@ CREATE TABLE posts (
   author VARCHAR(255),
   message TEXT,
   parent INTEGER,
-  created TIMESTAMP,
+  created TIMESTAMP DEFAULT NOW(),
   isEdited BOOLEAN,
   thread INTEGER  REFERENCES thread (id) ON DELETE CASCADE NOT NULL,
   forum VARCHAR(255) REFERENCES forum (slug) ON DELETE CASCADE NOT NULL

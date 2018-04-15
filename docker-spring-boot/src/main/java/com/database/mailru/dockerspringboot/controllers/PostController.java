@@ -32,61 +32,149 @@ public class PostController {
     }
 
     @PostMapping(value = "/api/thread/{slug_or_id}/create", produces = "application/json")
-    public Object createPost(@PathVariable("slug_or_id") String id, @RequestBody Post post, HttpServletResponse response) {
-        post.setCreated(new Timestamp(System.currentTimeMillis()));
-        post.setEdited(false);
-
-        // post.setThread(id); ща придумаем
-        if (threadDao.getThreadById(id) == null ) {
-            response.setStatus(404);
-            return  new Message("Can't find thread with id = " + id);
-        }
-        post.setForum(threadDao.getThreadById(id).getForum());
-
-
-        if (postDao.getPostById(post.getParent()) == null && post.getParent() != 0L) {
-            response.setStatus(409);
-            return  new Message("Can't find parent post with id = " + post.getParent());
+    public Object createPost(@PathVariable("slug_or_id") String id, @RequestBody Post[] posts, HttpServletResponse response) {
+        for (Post post : posts) {
+            post.setEdited(false);
         }
 
+        try {
+            if (threadDao.getThreadById(Long.valueOf(id)) != null) {
+                ThreadModel thread = threadDao.getThreadById(Long.valueOf(id));
+                for (Post post : posts) {
+                    post.setForum(thread.getForum());
+                    post.setThread(thread.getId());
+                }
+            }
+        } catch (NumberFormatException ignore) {
+
+            if ( threadDao.getThreadBySlug(id) != null) {
+                ThreadModel thread = threadDao.getThreadBySlug(id);
+                for (Post post : posts) {
+                    post.setForum(thread.getForum());
+                    post.setThread(thread.getId());
+                }
+            } else {
+                response.setStatus(404);
+                return  new Message("Can't find thread with id or slug  = " + id);
+            }
+        }
+
+        List<Post> result = new ArrayList<>();
+
+        for (Post post : posts) {
+            if (postDao.getPostById(post.getParent()) == null && post.getParent() != 0L) {
+                response.setStatus(409);
+                return new Message("Can't find parent post with id = " + post.getParent());
+            }
+            result.add(postDao.createPost(post));
+        }
         response.setStatus(201);
-        return postDao.createPost(post);
+        return result;
     }
 
     @GetMapping(value = "/api/thread/{slug_or_id}/details", produces = "application/json")
-    public Object getThreadInfo(@PathVariable("slug_or_id") Long id,HttpServletResponse response) {
-        ThreadModel threadModel = threadDao.getThreadById(id);
-        if (threadModel == null) {
-            response.setStatus(404);
-            return  new Message("Can't find thread with id = " + id);
+    public Object getThreadInfo(@PathVariable("slug_or_id") String id,HttpServletResponse response) {
+        ThreadModel threadModel;
+        try {
+            if (threadDao.getThreadById(Long.valueOf(id)) != null) {
+                threadModel = threadDao.getThreadById(Long.valueOf(id));
+                response.setStatus(200);
+                return threadModel;
+            }
+        } catch (NumberFormatException ignore) {
+            if (threadDao.getThreadBySlug(id) != null) {
+                threadModel = threadDao.getThreadBySlug(id);
+                response.setStatus(200);
+                return threadModel;
+            } else {
+                response.setStatus(404);
+                return new Message("Can't find thread with id or slug  = " + id);
+            }
         }
-        response.setStatus(200);
-        return threadModel;
+        return null;
     }
 
     @PostMapping(value = "/api/thread/{slug_or_id}/details", produces = "application/json")
-    public Object updateThreadInfo(@PathVariable("slug_or_id") Long id,  @RequestBody ThreadModel thread, HttpServletResponse response) {
-        ThreadModel threadModel = threadDao.getThreadById(id);
-        if (threadModel == null) {
-            response.setStatus(404);
-            return  new Message("Can't find thread with id = " + id);
+    public Object updateThreadInfo(@PathVariable("slug_or_id") String id,  @RequestBody ThreadModel thread, HttpServletResponse response) {
+        ThreadModel threadModel;
+        try {
+            if (threadDao.getThreadById(Long.valueOf(id)) != null) {
+                threadModel = threadDao.getThreadById(Long.valueOf(id));
+                if (thread.getMessage() != null) {
+                    threadModel.setMessage(thread.getMessage());
+                }
+                if (thread.getTitle() != null) {
+                    threadModel.setTitle(thread.getTitle());
+                }
+                response.setStatus(200);
+                return threadDao.updateThread(threadModel);
+            }
+        } catch (NumberFormatException ignore) {
+            if ( threadDao.getThreadBySlug(id) != null) {
+                threadModel = threadDao.getThreadBySlug(id);
+                if (thread.getMessage() != null) {
+                    threadModel.setMessage(thread.getMessage());
+                }
+                if (thread.getTitle() != null) {
+                    threadModel.setTitle(thread.getTitle());
+                }
+                response.setStatus(200);
+                return threadDao.updateThread(threadModel);
+
+            } else {
+                response.setStatus(404);
+                return  new Message("Can't find thread with id or slug  = " + id);
+            }
         }
-        thread.setId(id);
-        response.setStatus(200);
-        return threadDao.updateThread(thread);
+        return null;
     }
 
     @PostMapping(value = "/api/thread/{slug_or_id}/vote", produces = "application/json")
-    public Object updateThreadInfo(@PathVariable("slug_or_id") Long id, @RequestBody Vote vote, HttpServletResponse response) {
-        ThreadModel threadModel = threadDao.getThreadById(id);
-        if (threadModel == null) {
-            response.setStatus(404);
-            return  new Message("Can't find thread with id = " + id);
+    public Object updateThreadInfo(@PathVariable("slug_or_id") String id, @RequestBody Vote vote, HttpServletResponse response) {
+        ThreadModel threadModel;
+
+        try {
+            if (threadDao.getThreadById(Long.valueOf(id)) != null) {
+                threadModel = threadDao.getThreadById(Long.valueOf(id));
+                vote.setThreadId(threadModel.getId());
+
+                Vote curVote = voteDao.getByNicknameAndThread(vote.getNickname(), vote.getThreadId());
+                if (curVote == null) {
+                    voteDao.createVote(vote);
+                } else {
+                    curVote.setVoice(vote.getVoice());
+                    voteDao.updateVote(curVote);
+                }
+                threadDao.UpdateVotes(threadModel.getId(), voteDao.sumOfVotes(threadModel.getId()));
+
+
+                response.setStatus(200);
+                return threadDao.getThreadById(threadModel.getId());
+
+            }
+        } catch (NumberFormatException ignore) {
+            if ( threadDao.getThreadBySlug(id) != null) {
+                threadModel = threadDao.getThreadBySlug(id);
+                vote.setThreadId(threadModel.getId());
+
+                Vote curVote = voteDao.getByNicknameAndThread(vote.getNickname(), vote.getThreadId());
+                if (curVote == null) {
+                    voteDao.createVote(vote);
+                } else {
+                    curVote.setVoice(vote.getVoice());
+                    voteDao.updateVote(curVote);
+                }
+                threadDao.UpdateVotes(threadModel.getId(), voteDao.sumOfVotes(threadModel.getId()));
+
+
+                response.setStatus(200);
+                return threadDao.getThreadById(threadModel.getId());
+            } else {
+                response.setStatus(404);
+                return  new Message("Can't find thread with id or slug  = " + id);
+            }
         }
-        vote.setThreadId(id);
-        threadDao.incrementVotes(id);
-        response.setStatus(200);
-        return voteDao.createVote(vote);
+        return null;
     }
 
     @GetMapping(value = "/api/post/{id}/details", produces = "application/json")

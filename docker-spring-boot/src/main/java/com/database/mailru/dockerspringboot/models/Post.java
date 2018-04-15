@@ -15,9 +15,9 @@ public class Post {
     private Long parent;
     private Long thread;
     private Boolean isEdited;
-    private Timestamp created;
+    private String created;
 
-    public Post(Long id, String author, String forum, String message, Long parent, Long thread, Boolean isEdited, Timestamp created) {
+    public Post(Long id, String author, String forum, String message, Long parent, Long thread, Boolean isEdited, String created) {
         this.id = id;
         this.author = author;
         this.forum = forum;
@@ -96,11 +96,11 @@ public class Post {
         isEdited = edited;
     }
 
-    public Timestamp getCreated() {
+    public String getCreated() {
         return created;
     }
 
-    public void setCreated(Timestamp created) {
+    public void setCreated(String created) {
         this.created = created;
     }
 

@@ -5,6 +5,8 @@ import com.database.mailru.dockerspringboot.models.Post;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 public class PostMapper {
     public static final RowMapper<Post> POST_MAPPER = (res, num) -> {
@@ -15,8 +17,10 @@ public class PostMapper {
         Long parent = res.getLong("parent");
         Long thread = res.getLong("thread");
         Boolean isEdited = res.getBoolean("isEdited");
-        Timestamp created = res.getTimestamp("created");
+        final Timestamp timestamp = res.getTimestamp("created");
+        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        return new Post(id, author, forum, message, parent, thread, isEdited, created);
+        return new Post(id, author, forum, message, parent, thread, isEdited, dateFormat.format(timestamp.getTime()));
     };
 }

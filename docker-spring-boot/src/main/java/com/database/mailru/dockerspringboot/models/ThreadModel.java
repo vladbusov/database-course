@@ -19,7 +19,6 @@ public class ThreadModel {
     private String created;
     private String message;
     private String title;
-    @JsonIgnore
     private Integer votes;
 
     public ThreadModel(Long id, String slug, String author, String forum, String created, String message, String title, Integer votes) {

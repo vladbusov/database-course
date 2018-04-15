@@ -37,7 +37,7 @@ public class PostDao {
     }
 
     public Post createPost(Post post) throws JDBCException {
-        final String sql = "INSERT INTO posts (author,forum,message,parent,thread,isEdited,created) VALUES (?,?,?,?,?,?,?)";
+        final String sql = "INSERT INTO posts (author,forum,message,parent,thread,isEdited) VALUES (?,?,?,?,?,? )";
 
 
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
@@ -51,11 +51,10 @@ public class PostDao {
             pst.setLong(4, post.getParent());
             pst.setLong(5, post.getThread());
             pst.setBoolean(6, post.getEdited());
-            pst.setTimestamp(7,post.getCreated());
             return pst;
         }, keyHolder);
         this.numOfPosts++;
-        return new Post(keyHolder.getKey().longValue(), post.getAuthor(), post.getForum(), post.getMessage(), post.getParent(), post.getThread(), post.getEdited(), post.getCreated());
+        return (getPostById(keyHolder.getKey().longValue()));
     }
 
 

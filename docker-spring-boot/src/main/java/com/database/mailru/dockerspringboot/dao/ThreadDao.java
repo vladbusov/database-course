@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.transaction.Transactional;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
@@ -112,19 +113,32 @@ public class ThreadDao {
         return result.get(0);
     }
 
+    public ThreadModel getThreadBySlug(String slug) throws  JDBCException {
+        final String sql = "select * from thread where lower(slug) = lower(?)";
+        final List<ThreadModel> result =  template.query(sql, ps -> {
+            ps.setString(1,slug);
+        } , ThreadMapper.THREAD_MAPPER);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.get(0);
+    }
+
     public int updateThread(ThreadModel thread) {
         final String sql = "UPDATE Thread SET message=?, title=?, votes=? WHERE id=?";
         return template.update(sql, thread.getMessage(), thread.getTitle(), thread.getVotes(), thread.getId());
     }
 
-    public void incrementVotes(Long id) {
+    public void UpdateVotes(Long id, Integer voice) {
         final ThreadModel thread =  getThreadById(id);
         if (thread == null) {
             return;
         }
-        thread.setVotes(thread.getVotes() + 1);
+        thread.setVotes(voice);
         updateThread(thread);
     }
+
+
 
     public static Integer getNumOfThreads() {
         return numOfThreads;

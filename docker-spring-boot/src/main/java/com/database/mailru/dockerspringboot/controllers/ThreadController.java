@@ -7,6 +7,7 @@ import com.database.mailru.dockerspringboot.dao.UserDao;
 import com.database.mailru.dockerspringboot.models.Forum;
 import com.database.mailru.dockerspringboot.models.Message;
 import com.database.mailru.dockerspringboot.models.ThreadModel;
+import com.database.mailru.dockerspringboot.models.User;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -30,7 +31,7 @@ public class ThreadController {
     }
 
     @PostMapping(value = "/api/forum/{slug}/create", produces = "application/json")
-    public Object createUser(@PathVariable("slug") String slug, @RequestBody ThreadModel threadModel, HttpServletResponse response) throws IOException, ParseException {
+    public Object createUser(@PathVariable("slug") String slug, @RequestBody ThreadModel threadModel, HttpServletResponse response)  {
         if (forumDao.getForumForSlug(slug) == null) {
             response.setStatus(404);
             return new Message("Can't find forum slug" + slug );
@@ -39,12 +40,22 @@ public class ThreadController {
             response.setStatus(404);
             return new Message("Can't find forum user" + threadModel.getAuthor() );
         }
+
+        if (threadDao.getThreadBySlug(threadModel.getSlug()) != null && threadModel.getSlug() != null ) {
+            response.setStatus(409);
+            return threadDao.getThreadBySlug(threadModel.getSlug());
+        }
+
         threadModel.setForum(slug);
         try {
             List<ThreadModel> threads = threadDao.equalThread(threadModel.getId().intValue());
         } catch (NullPointerException e) {
             response.setStatus(201);
-            forumDao.incrementThreads(threadModel.getSlug());
+            Forum forum = forumDao.getForumForSlug(slug);
+            User user = userDao.getByNickname(threadModel.getAuthor());
+            threadModel.setForum(forum.getSlug());
+            threadModel.setAuthor(user.getNickname());
+            forumDao.incrementThreads(threadModel.getForum());
             return threadDao.createThread(threadModel);
         }
 
