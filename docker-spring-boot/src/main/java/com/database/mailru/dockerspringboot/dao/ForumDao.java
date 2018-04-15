@@ -44,7 +44,7 @@ public class ForumDao {
     }
 
     public Forum getForumForSlug(String slug) {
-        final String sql = "SELECT * FROM forum WHERE slug= ?";
+        final String sql = "SELECT * FROM forum WHERE lower(slug)= lower(?)";
         final List<Forum> result = template.query(sql, ps -> ps.setString(1, slug), ForumMapper.FORUM_MAPPER);
         if (result.isEmpty()) {
             return null;
@@ -55,13 +55,13 @@ public class ForumDao {
     public void incrementThreads(String slug) {
         final Forum forum = getForumForSlug(slug);
         if (forum != null) {
-            final String sql = "UPDATE forum SET threads=? WHERE slug=?";
+            final String sql = "UPDATE forum SET threads=? WHERE lower(slug)=lower(?)";
             template.update(sql, forum.getThreads() + 1, slug);
         }
     }
 
     public List<Forum> equalForumSlug(String slug) throws JDBCException {
-        final String sql = "SELECT * FROM forum WHERE slug = ?";
+        final String sql = "SELECT * FROM forum WHERE lower(slug) = lower(?)";
         final List<Forum> result = template.query(sql, ps -> {
             ps.setString(1,slug);
         } , ForumMapper.FORUM_MAPPER);

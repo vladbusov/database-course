@@ -1,5 +1,7 @@
 package com.database.mailru.dockerspringboot.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -14,12 +16,13 @@ public class ThreadModel {
     private String slug;
     private String author;
     private String forum;
-    private Timestamp created;
+    private String created;
     private String message;
     private String title;
+    @JsonIgnore
     private Integer votes;
 
-    public ThreadModel(Long id, String slug, String author, String forum, Timestamp created, String message, String title, Integer votes) {
+    public ThreadModel(Long id, String slug, String author, String forum, String created, String message, String title, Integer votes) {
         this.id = id;
         this.slug = slug;
         this.author = author;
@@ -30,7 +33,7 @@ public class ThreadModel {
         this.votes = votes;
     }
 
-    public ThreadModel(Long id, String slug, String author, String forum, Timestamp created, String message, String title) {
+    public ThreadModel(Long id, String slug, String author, String forum, String created, String message, String title) {
         this.id = id;
         this.slug = slug;
         this.author = author;
@@ -85,11 +88,11 @@ public class ThreadModel {
         this.forum = forum;
     }
 
-    public Timestamp getCreated() {
+    public String getCreated() {
         return created;
     }
 
-    public void setCreated(Timestamp created) {
+    public void setCreated(String created) {
         this.created = created;
     }
 

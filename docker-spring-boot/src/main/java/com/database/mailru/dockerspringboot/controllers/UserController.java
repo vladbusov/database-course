@@ -20,6 +20,7 @@ public class UserController {
 
     @PostMapping(value = "/api/user/{nickname}/create", produces = "application/json")
     public Object createUser(@PathVariable("nickname") String nickname, @RequestBody User user ,HttpServletResponse response) throws IOException {
+        user.setNickname(nickname);
         List<User> list = userDao.equalUsers(user);
         try {
             if (!list.isEmpty()) {
@@ -52,15 +53,35 @@ public class UserController {
 
     @PostMapping(value = "/api/user/{nickname}/profile", produces = "application/json")
     public Object editUserProfile(@PathVariable("nickname") String nickname, @RequestBody User user ,HttpServletResponse response) throws IOException {
-        if (userDao.getByNickname(nickname) == null) {
+        user.setNickname(nickname);
+
+        User curUser = userDao.getByNickname(nickname);
+
+        if (curUser == null) {
             response.setStatus(404);
             return new Message("Can't find user with nickname " + nickname);
         }
 
-        if (!userDao.equalUsersEmail(user).isEmpty()) {
-            response.setStatus(409);
-            return new Message("User data have conflict fields");
+        try {
+            if (!userDao.equalUsersEmail(user).isEmpty()) {
+                response.setStatus(409);
+                return new Message("User data have conflict fields");
+            }
+        } catch (NullPointerException ignored) {
         }
+
+        if (user.getEmail() == null || user.getEmail().equals("")) {
+            user.setEmail(curUser.getEmail());
+        }
+
+        if (user.getAbout() == null || user.getAbout().equals("")) {
+            user.setAbout(curUser.getAbout());
+        }
+
+        if (user.getFullname() == null || user.getFullname().equals("")) {
+            user.setFullname(curUser.getFullname());
+        }
+
         user.setNickname(nickname);
         int result = userDao.updateUser(user);
         if (result < 1) {

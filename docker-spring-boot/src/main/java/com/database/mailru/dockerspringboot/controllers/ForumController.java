@@ -23,7 +23,8 @@ public class ForumController {
 
     @PostMapping(value = "/api/forum/create", produces = "application/json")
     public Object getUserProfile(@RequestBody Forum forum , HttpServletResponse response) {
-        if (userDao.getByNickname(forum.getUser()) == null) {
+        User curUser = userDao.getByNickname(forum.getUser());
+        if (curUser == null) {
             response.setStatus(404);
             return new Message("Can't find user with nickname " + forum.getUser());
         }
@@ -37,6 +38,7 @@ public class ForumController {
 
         }
         response.setStatus(201);
+        forum.setUser(curUser.getNickname());
         return forumDao.createForum(forum);
     }
 

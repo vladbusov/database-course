@@ -31,7 +31,7 @@ public class UserDao {
     }
 
     public List<User> equalUsers(User user) throws  JDBCException {
-        final String sql = "SELECT * FROM Users WHERE email = ? OR nickname = ?";
+        final String sql = "SELECT * FROM Users WHERE lower(email) = lower(?) OR lower(nickname) = lower(?)";
         final List<User> result =  template.query(sql, ps -> {
             ps.setString(1,user.getEmail());
             ps.setString(2,user.getNickname());
@@ -43,7 +43,7 @@ public class UserDao {
     }
 
     public List<User> equalUsersEmail(User user) throws  JDBCException {
-        final String sql = "SELECT * FROM Users WHERE email = ?";
+        final String sql = "SELECT * FROM Users WHERE lower(email) = lower(?)";
         final List<User> result =  template.query(sql, ps -> {
             ps.setString(1,user.getEmail());
         } , UserMapper.USER_MAPPER);
@@ -71,7 +71,7 @@ public class UserDao {
     }
 
     public User getByNickname(String nickname) {
-        final String sql = "SELECT * FROM Users WHERE nickname = ?";
+        final String sql = "SELECT * FROM Users WHERE lower(nickname) = lower(?)";
         final List<User> result = template.query(sql, ps -> ps.setString(1, nickname), UserMapper.USER_MAPPER);
         if (result.isEmpty()) {
             return null;
@@ -121,7 +121,7 @@ public class UserDao {
     }
 
     public int updateUser(User user) {
-        final String sql = "UPDATE Users SET about=?, email=?, fullname=? WHERE nickname =?";
+        final String sql = "UPDATE Users SET about=?, email=?, fullname=? WHERE lower(nickname) = lower(?)";
         return template.update(sql, user.getAbout(), user.getEmail(), user.getFullname(), user.getNickname());
     }
 

@@ -2,6 +2,7 @@ package com.database.mailru.dockerspringboot.dao;
 
 import com.database.mailru.dockerspringboot.mapper.ThreadMapper;
 import com.database.mailru.dockerspringboot.models.ThreadModel;
+import org.h2.api.TimestampWithTimeZone;
 import org.hibernate.JDBCException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -9,9 +10,10 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Transactional
 @Service
@@ -31,28 +33,35 @@ public class ThreadDao {
         this.numOfThreads = 0;
     }
 
-    public ThreadModel createThread(ThreadModel thread) throws JDBCException {
-        final String sql = "INSERT INTO thread (slug,author,created,message,title,forum,votes) VALUES (?,?,?,?,?,?,?)";
+    public ThreadModel createThread(ThreadModel thread) throws JDBCException{
 
-        final String forum = forumDao.getForumForSlug(thread.getSlug()).getTitle();
-        final Integer votes = 0;
+        final StringBuilder sqlCreate = new StringBuilder();
+        final List<Object> params = new ArrayList<>();
 
-        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-        template.update(con -> {
-            PreparedStatement pst = con.prepareStatement(
-                    sql + " returning id",
-                    PreparedStatement.RETURN_GENERATED_KEYS);
-            pst.setString(1, thread.getSlug());
-            pst.setString(2, thread.getAuthor());
-            pst.setTimestamp(3, thread.getCreated());
-            pst.setString(4,thread.getMessage());
-            pst.setString(5,thread.getTitle());
-            pst.setString(6,forum);
-            pst.setInt(7,votes);
-            return pst;
-        }, keyHolder);
+        sqlCreate.append("INSERT INTO Thread (author, ");
+        params.add(thread.getAuthor());
+
+        if (thread.getCreated() != null) {
+            sqlCreate.append("created, ");
+        }
+
+        sqlCreate.append("forum, slug, message, title) VALUES(?, ");
+
+        if (thread.getCreated() != null) {
+            sqlCreate.append( "'" + thread.getCreated() + "'::timestamptz" + ", ");
+        }
+
+        sqlCreate.append("?, ?, ?, ?) RETURNING id");
+        params.add(thread.getForum());
+        params.add(thread.getSlug());
+        params.add(thread.getMessage());
+        params.add(thread.getTitle());
+
+        final Integer id = template.queryForObject(sqlCreate.toString(), Integer.class, params.toArray());
+        forumDao.incrementThreads(thread.getForum());
         this.numOfThreads++;
-        return new ThreadModel(keyHolder.getKey().longValue(),thread.getSlug(),thread.getAuthor(), forum, thread.getCreated(), thread.getMessage(), thread.getTitle(),votes);
+
+        return getThreadById(Long.valueOf(id));
     }
 
     public List<ThreadModel> equalThread(int id) throws JDBCException {
@@ -68,14 +77,14 @@ public class ThreadDao {
         final StringBuilder sqlCreate = new StringBuilder();
         final List<Object> params = new ArrayList<>();
 
-        sqlCreate.append("SELECT * FROM thread WHERE slug = ?");
+        sqlCreate.append("SELECT * FROM thread WHERE lower(forum) = lower(?)");
         params.add(slug);
 
         if (since != null) {
             if (Objects.equals(desc, Boolean.TRUE)) {
-                sqlCreate.append("and created <= ? ");
+                sqlCreate.append("and created <= ?::timestamptz ");
             } else {
-                sqlCreate.append("and created >= ? ");
+                sqlCreate.append("and created >= ?::timestamptz ");
             }
             params.add(since);
         }

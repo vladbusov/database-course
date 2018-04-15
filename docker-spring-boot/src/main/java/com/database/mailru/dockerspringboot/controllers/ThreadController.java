@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.List;
 
 @RestController
@@ -29,7 +30,7 @@ public class ThreadController {
     }
 
     @PostMapping(value = "/api/forum/{slug}/create", produces = "application/json")
-    public Object createUser(@PathVariable("slug") String slug, @RequestBody ThreadModel threadModel, HttpServletResponse response) throws IOException {
+    public Object createUser(@PathVariable("slug") String slug, @RequestBody ThreadModel threadModel, HttpServletResponse response) throws IOException, ParseException {
         if (forumDao.getForumForSlug(slug) == null) {
             response.setStatus(404);
             return new Message("Can't find forum slug" + slug );
@@ -38,7 +39,7 @@ public class ThreadController {
             response.setStatus(404);
             return new Message("Can't find forum user" + threadModel.getAuthor() );
         }
-        threadModel.setSlug(slug);
+        threadModel.setForum(slug);
         try {
             List<ThreadModel> threads = threadDao.equalThread(threadModel.getId().intValue());
         } catch (NullPointerException e) {
@@ -81,7 +82,11 @@ public class ThreadController {
                 response.setStatus(404);
                 return new Message("Can't find forum slug with " + slug);
             }
-        } catch (NullPointerException e){
+        } catch (NullPointerException ignored){
+        }
+        if (forumDao.getForumForSlug(slug) == null) {
+            response.setStatus(404);
+            return new Message("Can't find any threads");
         }
         response.setStatus(200);
         return threadDao.getThreadsForForum(slug,limit,since,desc);

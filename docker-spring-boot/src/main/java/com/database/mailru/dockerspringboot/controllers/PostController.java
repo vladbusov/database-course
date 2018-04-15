@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 @RestController
 public class PostController {
@@ -30,11 +32,11 @@ public class PostController {
     }
 
     @PostMapping(value = "/api/thread/{slug_or_id}/create", produces = "application/json")
-    public Object createPost(@PathVariable("slug_or_id") Long id, @RequestBody Post post, HttpServletResponse response) {
+    public Object createPost(@PathVariable("slug_or_id") String id, @RequestBody Post post, HttpServletResponse response) {
         post.setCreated(new Timestamp(System.currentTimeMillis()));
         post.setEdited(false);
 
-        post.setThread(id);
+        // post.setThread(id); ща придумаем
         if (threadDao.getThreadById(id) == null ) {
             response.setStatus(404);
             return  new Message("Can't find thread with id = " + id);
@@ -88,17 +90,36 @@ public class PostController {
     }
 
     @GetMapping(value = "/api/post/{id}/details", produces = "application/json")
-    public Object getPostInf(@PathVariable("id") Long id, HttpServletResponse response ) {
+    public Object getPostInf(@PathVariable("id") Long id, @RequestParam("related") String[] params , HttpServletResponse response ) {
+        boolean user = false;
+        boolean forum = false;
+        boolean thread = false;
+        for (String par : params) {
+            switch (par) {
+                case "user": user = true;
+                break;
+                case "forum": forum = true;
+                break;
+                case "thread": thread = true;
+                break;
+            }
+        }
         HashMap<String,Object> hashMap = new HashMap<>();
         Post curPost = postDao.getPostById(id);
         if (curPost == null) {
             response.setStatus(404);
             return  new Message("Can't find thread with id = " + id);
         }
-        hashMap.put("author", userDao.getByNickname(curPost.getAuthor()));
-        hashMap.put("forum", forumDao.getForumForSlug(curPost.getForum()));
+        if (user) {
+            hashMap.put("author", userDao.getByNickname(curPost.getAuthor()));
+        }
+        if (forum) {
+            hashMap.put("forum", forumDao.getForumForSlug(curPost.getForum()));
+        }
         hashMap.put("post", curPost);
-        hashMap.put("thread", threadDao.getThreadById(curPost.getThread()));
+        if (thread) {
+            hashMap.put("thread", threadDao.getThreadById(curPost.getThread()));
+        }
         response.setStatus(200);
         return hashMap;
     }
