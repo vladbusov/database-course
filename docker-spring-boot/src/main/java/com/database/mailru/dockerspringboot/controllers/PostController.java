@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -33,6 +35,7 @@ public class PostController {
 
     @PostMapping(value = "/api/thread/{slug_or_id}/create", produces = "application/json")
     public Object createPost(@PathVariable("slug_or_id") String id, @RequestBody Post[] posts, HttpServletResponse response) {
+        final String currentTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
         for (Post post : posts) {
             post.setEdited(false);
         }
@@ -66,7 +69,7 @@ public class PostController {
                 response.setStatus(409);
                 return new Message("Can't find parent post with id = " + post.getParent());
             }
-            result.add(postDao.createPost(post));
+            result.add(postDao.createPost(post, currentTime));
         }
         response.setStatus(201);
         return result;

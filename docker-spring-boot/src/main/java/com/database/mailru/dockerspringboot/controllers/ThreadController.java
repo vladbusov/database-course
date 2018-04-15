@@ -32,6 +32,9 @@ public class ThreadController {
 
     @PostMapping(value = "/api/forum/{slug}/create", produces = "application/json")
     public Object createUser(@PathVariable("slug") String slug, @RequestBody ThreadModel threadModel, HttpServletResponse response)  {
+
+
+
         if (forumDao.getForumForSlug(slug) == null) {
             response.setStatus(404);
             return new Message("Can't find forum slug" + slug );
@@ -122,22 +125,33 @@ public class ThreadController {
     }
 
     @GetMapping(value = "/api/thread/{slug_or_id}/posts", produces = "application/json")
-    public Object getThreadPosts(@PathVariable("slug_or_id") Long id,
+    public Object getThreadPosts(@PathVariable("slug_or_id") String id,
                                 @RequestParam( value = "limit", required = false) Integer limit,
                                 @RequestParam(value = "since", required = false) String since,
                                 @RequestParam(value = "desc", required = false) Boolean desc ,
                                  @RequestParam(value = "sort", required = false) String sort,
                                 HttpServletResponse response) {
-        ThreadModel threadModel = threadDao.getThreadById(id);
+
+        ThreadModel threadModel;
         try {
-            if ( threadModel == null){
-                response.setStatus(404);
-                return new Message("Can't find thread with id = " + id);
+            if (threadDao.getThreadById(Long.valueOf(id)) != null) {
+                threadModel = threadDao.getThreadById(Long.valueOf(id));
+                response.setStatus(200);
+                return postDao.getPostsForThread(threadModel.getId(),limit,since,sort,desc);
+
             }
-        } catch (NullPointerException e){
+        } catch (NumberFormatException ignore) {
+            if (threadDao.getThreadBySlug(id) != null) {
+                threadModel = threadDao.getThreadBySlug(id);
+                response.setStatus(200);
+                return postDao.getPostsForThread(threadModel.getId(),limit,since,sort,desc);
+
+            } else {
+                response.setStatus(404);
+                return new Message("Can't find thread with id or slug  = " + id);
+            }
         }
-        response.setStatus(200);
-        return postDao.getPostsForThread(id,limit,since,sort,desc);
+        return null;
     }
 
 

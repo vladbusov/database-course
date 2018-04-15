@@ -6,12 +6,16 @@ import com.database.mailru.dockerspringboot.models.Post;
 import com.database.mailru.dockerspringboot.models.ThreadModel;
 import com.database.mailru.dockerspringboot.models.User;
 import org.hibernate.JDBCException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.sql.PreparedStatement;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -36,8 +40,11 @@ public class PostDao {
         this.userDao = userDao;
     }
 
-    public Post createPost(Post post) throws JDBCException {
-        final String sql = "INSERT INTO posts (author,forum,message,parent,thread,isEdited) VALUES (?,?,?,?,?,? )";
+
+
+    public Post createPost(Post post, String time) throws JDBCException {
+        final String sql = "INSERT INTO posts (author,forum,message,parent,thread,isEdited,created) VALUES (?,?,?,?,?,?,?::TIMESTAMPTZ )";
+
 
 
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
@@ -51,6 +58,7 @@ public class PostDao {
             pst.setLong(4, post.getParent());
             pst.setLong(5, post.getThread());
             pst.setBoolean(6, post.getEdited());
+            pst.setString(7, time);
             return pst;
         }, keyHolder);
         this.numOfPosts++;
@@ -106,23 +114,22 @@ public class PostDao {
         // flat - по дате, комментарии выводятся простым списком в порядке создания;
         final StringBuilder sqlQuery = new StringBuilder();
         final ArrayList<Object> params = new ArrayList<>();
-        sqlQuery.append("SELECT u.nickname as author, p.created, f.slug as forum, p.id, p.isEdited as isEdited, p.message, p.parent, p.thread as thread " +
-                " FROM Posts p JOIN users u ON p.author = u.id JOIN forum f on p.forum = f.slug WHERE thread.Id = ? ");
+        sqlQuery.append("select * from posts where thread = ?");
         params.add(id);
 
         if (since != null) {
-            sqlQuery.append(" AND p.id " );
+            sqlQuery.append(" AND id " );
 
             if (desc != null && desc.equals(Boolean.TRUE)) {
-                sqlQuery.append(" < ? ");
+                sqlQuery.append(" <= ? ");
             } else {
-                sqlQuery.append(" > ? ");
+                sqlQuery.append(" >= ? ");
             }
 
             params.add(since);
         }
 
-        sqlQuery.append(" ORDER BY (p.id) ");
+        sqlQuery.append(" ORDER BY id ");
         if (desc != null && desc.equals(Boolean.TRUE)) {
             sqlQuery.append(" DESC ");
         }

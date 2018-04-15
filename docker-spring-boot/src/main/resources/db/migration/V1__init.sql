@@ -30,7 +30,8 @@ CREATE TABLE posts (
   author VARCHAR(255),
   message TEXT,
   parent INTEGER,
-  created TIMESTAMP DEFAULT NOW(),
+  created TIMESTAMPTZ DEFAULT NOW(),
+  path INTEGER[],
   isEdited BOOLEAN,
   thread INTEGER  REFERENCES thread (id) ON DELETE CASCADE NOT NULL,
   forum VARCHAR(255) REFERENCES forum (slug) ON DELETE CASCADE NOT NULL
@@ -40,5 +41,6 @@ CREATE TABLE votes (
   id Serial PRIMARY KEY ,
   nickname VARCHAR(255) REFERENCES users (nickname) ON DELETE CASCADE NOT NULL,
   voice INTEGER,
-  threadId INTEGER REFERENCES thread(id) ON DELETE CASCADE NOT NULL
+  threadId INTEGER REFERENCES thread(id) ON DELETE CASCADE NOT NULL,
+  CONSTRAINT unique_pair UNIQUE (nickname, threadId)
 );
