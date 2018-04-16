@@ -202,7 +202,7 @@ public class PostDao {
             params.add(since);
         }
 
-        sqlQuery.append(" ORDER BY path ");
+        sqlQuery.append(" ORDER BY string_to_array(path,'.')::integer ");
         if (desc != null && desc.equals(Boolean.TRUE)) {
             sqlQuery.append(" DESC ");
         }
