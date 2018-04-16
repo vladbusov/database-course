@@ -104,7 +104,7 @@ public class UserDao {
         }
 
 
-        sqlCreate.append(" ORDER BY a.nickname ");
+        sqlCreate.append(" ORDER BY lower(a.nickname) ");
 
         sqlCreate.append(Objects.equals(desc, Boolean.TRUE) ? " DESC " : "ASC");
 
