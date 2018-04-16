@@ -202,7 +202,7 @@ public class PostDao {
             params.add(since);
         }
 
-        sqlQuery.append(" ORDER BY string_to_array(path,'.')::integer ");
+        sqlQuery.append(" ORDER BY string_to_array(path,'.')::integer[] ");
         if (desc != null && desc.equals(Boolean.TRUE)) {
             sqlQuery.append(" DESC ");
         }
@@ -251,9 +251,9 @@ public class PostDao {
         // string_to_array(path,'.');
         sqlQuery.append(") ORDER BY  ");
         if (desc != null && desc.equals(Boolean.TRUE)) {
-            sqlQuery.append(" (string_to_array(path,'.'))[2] DESC, path ASC ");
+            sqlQuery.append(" (string_to_array(path,'.'))[2]::integer DESC, string_to_array(path,'.')::integer[] ASC ");
         } else {
-            sqlQuery.append(" path ");
+            sqlQuery.append(" string_to_array(path,'.')::integer[] ");
         }
 
 
