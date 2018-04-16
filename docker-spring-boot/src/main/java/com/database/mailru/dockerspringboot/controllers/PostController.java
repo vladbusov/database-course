@@ -40,38 +40,42 @@ public class PostController {
         for (Post post : posts) {
             post.setEdited(false);
         }
-
+        ThreadModel thread = null;
         try {
             if (threadDao.getThreadById(Long.valueOf(id)) != null) {
-                ThreadModel thread = threadDao.getThreadById(Long.valueOf(id));
-                for (Post post : posts) {
-                    post.setForum(thread.getForum());
-                    post.setThread(thread.getId());
-                }
+                thread = threadDao.getThreadById(Long.valueOf(id));
             }
         } catch (NumberFormatException ignore) {
 
             if ( threadDao.getThreadBySlug(id) != null) {
-                ThreadModel thread = threadDao.getThreadBySlug(id);
-                for (Post post : posts) {
-                    post.setForum(thread.getForum());
-                    post.setThread(thread.getId());
-                }
-            } else {
-                response.setStatus(404);
-                return  new Message("Can't find thread with id or slug  = " + id);
+                thread = threadDao.getThreadBySlug(id);
             }
+        }
+
+        if (thread == null) {
+            response.setStatus(404);
+            return  new Message("Can't find thread with id or slug  = " + id);
         }
 
         List<Post> result = new ArrayList<>();
 
         for (Post post : posts) {
-            if (postDao.getPostById(post.getParent()) == null && post.getParent() != 0L) {
+            post.setForum(thread.getForum());
+            post.setThread(thread.getId());
+
+            if (!postDao.parentExistOrRootForThread(post.getParent(), thread.getId())) {
                 response.setStatus(409);
-                return new Message("Can't find parent post with id = " + post.getParent());
+                return new Message("Can't find parent or parent in another thread " +
+                        "(post with id = " + post.getParent() + ") ");
+            }
+            if (userDao.getByNickname(post.getAuthor()) == null) {
+                response.setStatus(404);
+                return new Message("Can't find user for post");
             }
             result.add(postDao.createPost(post, currentTime));
         }
+
+
         response.setStatus(201);
         return result;
     }
@@ -95,7 +99,8 @@ public class PostController {
                 return new Message("Can't find thread with id or slug  = " + id);
             }
         }
-        return null;
+        response.setStatus(404);
+        return new Message("Can't find thread with id or slug  = " + id);
     }
 
     @PostMapping(value = "/api/thread/{slug_or_id}/details", produces = "application/json")
@@ -131,12 +136,13 @@ public class PostController {
                 return  new Message("Can't find thread with id or slug  = " + id);
             }
         }
-        return null;
+        response.setStatus(404);
+        return  new Message("Can't find thread with id or slug  = " + id);
     }
 
     @PostMapping(value = "/api/thread/{slug_or_id}/vote", produces = "application/json")
     public Object updateThreadInfo(@PathVariable("slug_or_id") String id, @RequestBody Vote vote, HttpServletResponse response) {
-        ThreadModel threadModel;
+        ThreadModel threadModel = null;
 
         try {
             if (threadDao.getThreadById(Long.valueOf(id)) != null) {
@@ -144,6 +150,12 @@ public class PostController {
                 vote.setThreadId(threadModel.getId());
 
                 Vote curVote = voteDao.getByNicknameAndThread(vote.getNickname(), vote.getThreadId());
+
+                if (userDao.getByNickname(vote.getNickname()) == null) {
+                    response.setStatus(404);
+                    return  new Message("Can't find user for id or slug  = " + id);
+                }
+
                 if (curVote == null) {
                     voteDao.createVote(vote);
                 } else {
@@ -151,7 +163,6 @@ public class PostController {
                     voteDao.updateVote(curVote);
                 }
                 threadDao.UpdateVotes(threadModel.getId(), voteDao.sumOfVotes(threadModel.getId()));
-
 
                 response.setStatus(200);
                 return threadDao.getThreadById(threadModel.getId());
@@ -163,6 +174,12 @@ public class PostController {
                 vote.setThreadId(threadModel.getId());
 
                 Vote curVote = voteDao.getByNicknameAndThread(vote.getNickname(), vote.getThreadId());
+
+                if (userDao.getByNickname(vote.getNickname()) == null) {
+                    response.setStatus(404);
+                    return  new Message("Can't find user for id or slug  = " + id);
+                }
+
                 if (curVote == null) {
                     voteDao.createVote(vote);
                 } else {
@@ -172,6 +189,7 @@ public class PostController {
                 threadDao.UpdateVotes(threadModel.getId(), voteDao.sumOfVotes(threadModel.getId()));
 
 
+
                 response.setStatus(200);
                 return threadDao.getThreadById(threadModel.getId());
             } else {
@@ -179,7 +197,8 @@ public class PostController {
                 return  new Message("Can't find thread with id or slug  = " + id);
             }
         }
-        return null;
+        response.setStatus(404);
+        return  new Message("Can't find thread with id or slug  = " + id);
     }
 
     @GetMapping(value = "/api/post/{id}/details", produces = "application/json")
@@ -208,12 +227,14 @@ public class PostController {
         Post curPost = postDao.getPostById(id);
         if (curPost == null) {
             response.setStatus(404);
-            return  new Message("Can't find thread with id = " + id);
+            return  new Message("Can't find post with id = " + id);
         }
         if (user) {
             hashMap.put("author", userDao.getByNickname(curPost.getAuthor()));
         }
         if (forum) {
+            String slug = curPost.getForum();
+            forumDao.updateForumInfo(slug, threadDao.countOfThreads(slug), postDao.countOfPosts(slug));
             hashMap.put("forum", forumDao.getForumForSlug(curPost.getForum()));
         }
         hashMap.put("post", curPost);
@@ -231,10 +252,15 @@ public class PostController {
             response.setStatus(404);
             return  new Message("Can't find thread with id = " + id);
         }
-        curPost.setMessage(post.getMessage());
+        if (post.getMessage() != null && !post.getMessage().equals("")) {
+            if (!post.getMessage().equals(curPost.getMessage())) {
+                postDao.setIsEdited(curPost.getId());
+            }
+            curPost.setMessage(post.getMessage());
+            postDao.updatePost(curPost);
+        }
         response.setStatus(200);
-        postDao.updatePost(curPost);
-        return curPost;
+        return postDao.getPostById(id);
     }
 
 }

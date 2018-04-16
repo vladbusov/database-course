@@ -1,5 +1,7 @@
 package com.database.mailru.dockerspringboot.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.sql.Timestamp;
@@ -7,14 +9,19 @@ import java.util.Objects;
 
 @Entity
 public class Post {
+
     @Id
     private Long id;
+
     private String author;
     private String forum;
     private String message;
     private Long parent;
     private Long thread;
+
+    @JsonProperty(value = "isEdited")
     private Boolean isEdited;
+
     private String created;
     private String path;
 

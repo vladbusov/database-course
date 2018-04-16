@@ -90,6 +90,24 @@ public class PostDao {
         return result.get(0);
     }
 
+
+    public Boolean parentExistOrRootForThread(Long id, Long threadId) throws  JDBCException {
+        if (id.equals(0L)) {
+            return true;
+        }
+        final String sql = "SELECT * FROM Posts WHERE id = ?";
+        final List<Post> result =  template.query(sql, ps -> {
+            ps.setLong(1,id);
+        } , PostMapper.POST_MAPPER);
+
+        if (result.isEmpty()) {
+            return false;
+        } else {
+            return result.get(0).getThread().equals(threadId);
+        }
+    }
+
+
     public static Integer getNumOfPosts() {
         return numOfPosts;
     }
@@ -97,6 +115,11 @@ public class PostDao {
     public void updatePost(Post post) {
         final String sql = "UPDATE Posts SET message=?, path =? WHERE id =?";
         template.update(sql, post.getMessage(),post.getPath(), post.getId());
+    }
+
+    public void setIsEdited(Long id) {
+        final String sql = "UPDATE Posts SET isEdited =? WHERE id =?";
+        template.update(sql, true, id);
     }
 
     public void clean() {
@@ -131,7 +154,7 @@ public class PostDao {
         // flat - по дате, комментарии выводятся простым списком в порядке создания;
         final StringBuilder sqlQuery = new StringBuilder();
         final ArrayList<Object> params = new ArrayList<>();
-        sqlQuery.append("select * from posts where thread = ?");
+        sqlQuery.append("select * from posts where thread = ? ");
         params.add(id);
 
         if (since != null) {

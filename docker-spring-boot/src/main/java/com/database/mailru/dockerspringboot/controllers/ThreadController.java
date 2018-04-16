@@ -152,7 +152,8 @@ public class ThreadController {
                 return new Message("Can't find thread with id or slug  = " + id);
             }
         }
-        return null;
+        response.setStatus(404);
+        return new Message("Can't find thread with id or slug  = " + id);
     }
 
 
