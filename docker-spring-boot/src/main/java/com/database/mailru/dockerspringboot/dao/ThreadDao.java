@@ -129,6 +129,11 @@ public class ThreadDao {
         return template.update(sql, thread.getMessage(), thread.getTitle(), thread.getVotes(), thread.getId());
     }
 
+    public Integer countOfThreads(String forum) {
+        final String sqlQuery = "SELECT count(id) FROM Thread where forum = '" + forum + "'";
+        return template.queryForObject(sqlQuery, Integer.class);
+    }
+
     public void UpdateVotes(Long id, Integer voice) {
         final ThreadModel thread =  getThreadById(id);
         if (thread == null) {

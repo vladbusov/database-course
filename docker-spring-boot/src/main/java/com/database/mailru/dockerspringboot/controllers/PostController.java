@@ -111,7 +111,8 @@ public class PostController {
                     threadModel.setTitle(thread.getTitle());
                 }
                 response.setStatus(200);
-                return threadDao.updateThread(threadModel);
+                threadDao.updateThread(threadModel);
+                return threadDao.getThreadById(threadModel.getId());
             }
         } catch (NumberFormatException ignore) {
             if ( threadDao.getThreadBySlug(id) != null) {
@@ -123,8 +124,8 @@ public class PostController {
                     threadModel.setTitle(thread.getTitle());
                 }
                 response.setStatus(200);
-                return threadDao.updateThread(threadModel);
-
+                threadDao.updateThread(threadModel);
+                return threadDao.getThreadById(threadModel.getId());
             } else {
                 response.setStatus(404);
                 return  new Message("Can't find thread with id or slug  = " + id);
@@ -182,19 +183,26 @@ public class PostController {
     }
 
     @GetMapping(value = "/api/post/{id}/details", produces = "application/json")
-    public Object getPostInf(@PathVariable("id") Long id, @RequestParam("related") String[] params , HttpServletResponse response ) {
+    public Object getPostInf(@PathVariable("id") Long id, @RequestParam(value = "related", required = false)
+            String[] params , HttpServletResponse response ) {
         boolean user = false;
         boolean forum = false;
         boolean thread = false;
-        for (String par : params) {
-            switch (par) {
-                case "user": user = true;
-                break;
-                case "forum": forum = true;
-                break;
-                case "thread": thread = true;
-                break;
+        try {
+            for (String par : params) {
+                switch (par) {
+                    case "user":
+                        user = true;
+                        break;
+                    case "forum":
+                        forum = true;
+                        break;
+                    case "thread":
+                        thread = true;
+                        break;
+                }
             }
+        } catch (NullPointerException ignored) {
         }
         HashMap<String,Object> hashMap = new HashMap<>();
         Post curPost = postDao.getPostById(id);

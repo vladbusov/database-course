@@ -122,6 +122,11 @@ public class PostDao {
         return null;
     }
 
+    public Integer countOfPosts(String forum) {
+        final String sqlQuery = "SELECT count(id) FROM Posts where forum = '" + forum + "'";
+        return template.queryForObject(sqlQuery, Integer.class);
+    }
+
     public List<Post> sortByFlat(Long id, Integer limit, String since, Boolean desc) {
         // flat - по дате, комментарии выводятся простым списком в порядке создания;
         final StringBuilder sqlQuery = new StringBuilder();

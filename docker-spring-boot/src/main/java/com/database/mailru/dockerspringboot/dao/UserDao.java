@@ -82,32 +82,35 @@ public class UserDao {
     public List<User> getUsersByForum(String slug, Integer limit, String since, Boolean desc) {
         final StringBuilder sqlCreate = new StringBuilder();
         final List<Object> params = new ArrayList<>();
+        if (desc == null) {
+            desc = false;
+        }
 
-        sqlCreate.append("Select * from users left join posts on users.id = posts.author left" +
-                "join thread on users.id = thread.author where posts.forum = ? or thread.slug = ?");
+        sqlCreate.append("Select * from (Select distinct on (users.nickname) users.nickname, users.email, " +
+                " users.fullname, users.about from users left join " +
+                " posts on users.nickname = posts.author left " +
+                " join thread on users.nickname = thread.author " +
+                " where lower(posts.forum) = lower(?) or lower(thread.forum) = lower(?) ) a ");
         params.add(slug);
         params.add(slug);
 
         if (since != null) {
             if (Objects.equals(desc, Boolean.TRUE)) {
-                sqlCreate.append("and posts.created <= ? and thread.created <= ? ");
+                sqlCreate.append(" where lower(a.nickname) < lower(?) ");
             } else {
-                sqlCreate.append("and created >= ? and thread.created >= ?");
+                sqlCreate.append(" where lower(a.nickname) > lower(?) ");
             }
-            params.add(since);
             params.add(since);
         }
 
-        sqlCreate.append("ORDER BY posts.created ");
 
-        sqlCreate.append(Objects.equals(desc, Boolean.TRUE) ? " DESC " : "");
+        sqlCreate.append(" ORDER BY a.nickname ");
 
-        sqlCreate.append(", thread.created ");
+        sqlCreate.append(Objects.equals(desc, Boolean.TRUE) ? " DESC " : "ASC");
 
-        sqlCreate.append(Objects.equals(desc, Boolean.TRUE) ? " DESC " : "");
 
         if (limit != null) {
-            sqlCreate.append("LIMIT ?");
+            sqlCreate.append(" LIMIT ? ");
             params.add(limit);
         }
 

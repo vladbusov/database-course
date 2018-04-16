@@ -71,6 +71,7 @@ public class ThreadController {
 
     @GetMapping(value = "/api/forum/{slug}/details", produces = "application/json")
     public Object getForumDetails(@PathVariable("slug") String slug, HttpServletResponse response) {
+        forumDao.updateForumInfo(slug, threadDao.countOfThreads(slug), postDao.countOfPosts(slug));
         List<Forum> forums = forumDao.equalForumSlug(slug) ;
         try {
             if (!forums.isEmpty()) {
@@ -112,14 +113,14 @@ public class ThreadController {
                                   @RequestParam(value = "since", required = false) String since,
                                   @RequestParam(value = "desc", required = false) Boolean desc ,
                                   HttpServletResponse response) {
-        List<Forum> forums = forumDao.equalForumSlug(slug) ;
-        try {
-            if (forums.isEmpty()) {
-                response.setStatus(404);
-                return new Message("Can't find forum slug with " + slug);
-            }
-        } catch (NullPointerException e){
+        Forum forum = forumDao.getForumForSlug(slug) ;
+
+        if (forum == null) {
+            response.setStatus(404);
+            return new Message("Can't find forum slug with " + slug);
         }
+
+
         response.setStatus(200);
         return userDao.getUsersByForum(slug,limit,since,desc);
     }

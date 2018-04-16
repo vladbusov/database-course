@@ -20,6 +20,7 @@ public class ForumDao {
     private final JdbcTemplate template;
     private static Integer numOfForums;
 
+
     public ForumDao(JdbcTemplate template) {
         this.template = template;
     }
@@ -60,6 +61,11 @@ public class ForumDao {
         }
     }
 
+    public void updateForumInfo(String slug, Integer countThreads, Integer countPosts) {
+        final String sql = "UPDATE Forum SET threads=?, posts=? WHERE lower(slug) = lower(?)";
+        template.update(sql, countThreads, countPosts, slug );
+    }
+
     public List<Forum> equalForumSlug(String slug) throws JDBCException {
         final String sql = "SELECT * FROM forum WHERE lower(slug) = lower(?)";
         final List<Forum> result = template.query(sql, ps -> {
@@ -70,6 +76,7 @@ public class ForumDao {
         }
         return result;
     }
+
 
     public static Integer getNumOfForums() {
         return numOfForums;
